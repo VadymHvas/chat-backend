@@ -14,10 +14,6 @@ export class UserService {
 
     this.users.set(name, socket.id);
 
-    const onlineUsers: string[] = Array.from(this.users.keys());
-
-    console.log(onlineUsers)
-
     socket.emit("getMe",  { name, id: socket.id });
   };
 
