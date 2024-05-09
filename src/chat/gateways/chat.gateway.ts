@@ -23,17 +23,29 @@ export class ChatGateway implements OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket,
     @MessageBody("name") name: string
   ): void {
-    this.userService.addUser(name, socket);
-
-    this.server.emit("getUsers", {users: this.userService.getUsers().slice(0, 8).reverse()});
+    this.userService.addUser(socket, this.server, name);
   };
 
   @SubscribeMessage("sendMessage")
   public sendMessage(
-    @ConnectedSocket() socket: Socket,
     @MessageBody() dto: {message: string; name: string},
   ): void {
-    this.chatService.sendMessage(dto, this.server);
+    this.chatService.sendMessage(this.server, dto);
+  };
+
+  @SubscribeMessage("openChat")
+  public openChat(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() dto: {inviterName: string, name: string}
+  ): void {
+    this.chatService.openChat(socket, this.server, dto);
+  };
+
+  @SubscribeMessage("inviteUser")
+  public inviteUser(
+    @MessageBody() dto: {name: string; inviterName: string}
+  ): void {
+    this.userService.inviteUser(this.server, dto);
   };
 
   public handleDisconnect(client: Socket): void {

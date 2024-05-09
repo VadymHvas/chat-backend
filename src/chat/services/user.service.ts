@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { Socket } from "socket.io";
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Server, Socket } from "socket.io";
+import { NotFoundError } from "rxjs";
 
 @Injectable()
 export class UserService {
   private users: Map<string, string> = new Map<string, string>();
 
-  public addUser(name: string, socket: Socket): void {
+  public addUser(socket: Socket, server: Server, name: string): void {
     if (this.users.has(name)) {
       socket.emit("getMe", { error: "Name already in use" });
 
@@ -15,6 +16,17 @@ export class UserService {
     this.users.set(name, socket.id);
 
     socket.emit("getMe",  { name, id: socket.id });
+    server.emit("getUsers", {users: this.getUsers().slice(0, 8).reverse()});
+  };
+
+  public inviteUser(server: Server, dto: {name: string; inviterName: string}): void {
+    const user = this.users.get(dto.name);
+    const inviter = this.users.get(dto.inviterName);
+
+    if (!user)
+      return;
+
+    server.to(user).emit("invite", {name: dto.inviterName});
   };
 
   public getUser(name: string): string {
